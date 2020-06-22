@@ -1,2 +1,2 @@
 # XPlay
-FFmpeg 音视频demo
+基于 FFmpeg 开发的音视频示例
