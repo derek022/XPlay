@@ -1,39 +1,44 @@
-//
-// Created by derek on 2020-02-22.
-//
 
 #ifndef XPLAY_IDECODE_H
 #define XPLAY_IDECODE_H
 
-
 #include "XParameter.h"
 #include "IObserver.h"
 #include <list>
-
-class IDecode : public IObserver
+//解码接口，支持硬解码
+class IDecode:public IObserver
 {
 public:
-    virtual bool Open(XParameter x) = 0;
-
-    // future 模型， 发送数据
+    //打开解码器
+    virtual bool Open(XParameter para,bool isHard=false) = 0;
+    virtual void Close() = 0;
+    virtual void Clear();
+    //future模型 发送数据到线程解码
     virtual bool SendPacket(XData pkt) = 0;
 
-    // 接受数据
+    //从线程中获取解码结果  再次调用会复用上次空间，线程不安全
     virtual XData RecvFrame() = 0;
 
-    // 由主体notify的数据,  阻塞式
+    //由主体notify的数据 阻塞
     virtual void Update(XData pkt);
 
     bool isAudio = false;
 
-    //最大的缓存队列：  100 帧，每秒25帧的话，缓存4秒
+    //最大的队列缓冲
     int maxList = 100;
+
+    //同步时间，再次打开文件要清理
+    int synPts = 0;
+    int pts = 0;
 
 protected:
     virtual void Main();
-    std::list<XData> packts;
 
-    std::mutex packsMutes;
+    //读取缓冲
+    std::list<XData> packs;
+    std::mutex packsMutex;
+
+
 };
 
 

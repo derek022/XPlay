@@ -1,6 +1,3 @@
-//
-// Created by derek on 2020-03-08.
-//
 
 #ifndef XPLAY_GLVIDEOVIEW_H
 #define XPLAY_GLVIDEOVIEW_H
@@ -11,16 +8,15 @@
 
 class XTexture;
 
-class GLVideoView : public IVideoView
-{
+class GLVideoView: public IVideoView {
 public:
-    virtual void SetRender(void * win);
-
+    virtual void SetRender(void *win);
     virtual void Render(XData data);
-
+    virtual void Close();
 protected:
-    void * view = nullptr;
-    XTexture * txt = nullptr;
+    void *view = 0;
+    XTexture *txt = 0;
+    std::mutex mux;
 };
 
 

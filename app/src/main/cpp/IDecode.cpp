@@ -1,75 +1,97 @@
-//
-// Created by derek on 2020-02-22.
-//
+
 
 #include "IDecode.h"
 #include "XLog.h"
 
+//由主体notify的数据
 void IDecode::Update(XData pkt)
 {
-    if(this->isAudio != pkt.isAudio)
+    if(pkt.isAudio != isAudio)
     {
         return;
     }
-
-    // s生产者
     while (!isExit)
     {
-        packsMutes.lock();
+        packsMutex.lock();
 
-        // 阻塞
-        if (packts.size()<maxList)
+        //阻塞
+        if(packs.size() < maxList)
         {
-            packts.push_back(pkt);
-            packsMutes.unlock();
+            //生产者
+            packs.push_back(pkt);
+            packsMutex.unlock();
             break;
         }
-        packsMutes.unlock();
-
+        packsMutex.unlock();
         XSleep(1);
     }
 
 
+
+}
+void IDecode::Clear()
+{
+    packsMutex.lock();
+    while(!packs.empty())
+    {
+        packs.front().Drop();
+        packs.pop_front();
+    }
+    pts = 0;
+    synPts = 0;
+    packsMutex.unlock();
 }
 
 void IDecode::Main()
 {
-    while (!isExit)
+    while(!isExit)
     {
-
-        packsMutes.lock();
-
-        if (packts.empty())
+        if(IsPause())
         {
-//            packts.unique();
-            packsMutes.unlock();
-            // 休眠
-
-            XSleep(1);
-
+            XSleep(2);
             continue;
         }
-        // 取出packet  消费者
-        XData data = packts.front();
-        packts.pop_front();
 
-        if (this->SendPacket(data))
+        packsMutex.lock();
+
+        //判断音视频同步
+        if(!isAudio && synPts > 0)
         {
-            // 获取解码帧数据
-            XData frame = RecvFrame();
-            if (!frame.data) break;
-
-            XLOGI("RecvFrame() %d ",frame.size);
-            // 发送数据 观察者
-            this->Notify(frame);
-
+            if(synPts < pts)
+            {
+                packsMutex.unlock();
+                XSleep(1);
+                continue;
+            }
         }
 
-        data.Drop();
+        if(packs.empty())
+        {
+            packsMutex.unlock();
+            XSleep(1);
+            continue;
+        }
+        //取出packet 消费者
+        XData pack = packs.front();
+        packs.pop_front();
 
-        packsMutes.unlock();
+        //发送数据到解码线程，一个数据包，可能解码多个结果
+        if(this->SendPacket(pack))
+        {
+            while(!isExit)
+            {
+                //获取解码数据
+                XData frame = RecvFrame();
+                if(!frame.data) break;
+                //XLOGE("RecvFrame %d",frame.size);
+                pts = frame.pts;
+                //发送数据给观察者
+                this->Notify(frame);
+
+            }
+
+        }
+        pack.Drop();
+        packsMutex.unlock();
     }
-
-
-
 }

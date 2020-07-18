@@ -1,24 +1,25 @@
-//
-// Created by derek on 2020-02-22.
-//
 
 #include "IObserver.h"
 
-void IObserver::AddObs(IObserver * obs)
+
+//主体函数 添加观察者
+void IObserver::AddObs(IObserver *obs)
 {
-    if (!obs)
-        return;
-    mtx.lock();
+    if(!obs)return;
+    mux.lock();
     obss.push_back(obs);
-    mtx.unlock();
+    mux.unlock();
 }
 
-
+//通知所有观察者
 void IObserver::Notify(XData data)
 {
-    mtx.lock();
-    for (int i = 0; i < obss.size(); ++i) {
+
+    mux.lock();
+    for(int i =0; i < obss.size(); i++)
+    {
         obss[i]->Update(data);
     }
-    mtx.unlock();
+    mux.unlock();
+
 }

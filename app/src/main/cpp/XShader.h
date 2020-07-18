@@ -1,18 +1,24 @@
-//
-// Created by derek on 2020-03-08.
-//
 
 #ifndef XPLAY_XSHADER_H
 #define XPLAY_XSHADER_H
 
+#include <mutex>
 
-class XShader {
+enum XShaderType
+{
+    XSHADER_YUV420P = 0,    //软解码和虚拟机
+    XSHADER_NV12 = 25,      //手机
+    XSHADER_NV21 = 26
+};
+
+class XShader
+{
 public:
-    virtual bool Init();
+    virtual bool Init(XShaderType type=XSHADER_YUV420P);
+    virtual void Close();
 
-    // 获取材质并映射到内存,索引对应纹理的层次
-    void GetTexture(unsigned int index,int width,int height, unsigned char * buf);
-
+    //获取材质并映射到内存
+    virtual void GetTexture(unsigned int index,int width,int height, unsigned char *buf,bool isa=false);
     virtual void Draw();
 
 protected:
@@ -20,6 +26,7 @@ protected:
     unsigned int fsh = 0;
     unsigned int program = 0;
     unsigned int texts[100] = {0};
+    std::mutex mux;
 };
 
 

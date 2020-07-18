@@ -55,6 +55,12 @@ add_library( # Sets the name of the library.
         XEGL.cpp
         IResample.cpp
         FFResample.cpp
+        FFPlayerBuilder.cpp
+        SLAudioPlay.cpp
+        IPlayerBuilder.cpp
+        IPlayerPorxy.cpp
+        IPlayer.cpp
+        IAudioPlay.cpp
         )
 
 # Searches for a specified prebuilt library and stores the path as a

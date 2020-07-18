@@ -1,99 +1,69 @@
+
 #include <jni.h>
 #include <string>
-extern "C"{
-#include <libavformat/avformat.h>
-}
-
 #include <android/native_window_jni.h>
-#include <android/native_window.h>
 
-#include "FFDemux.h"
-#include "FFDecode.h"
-#include "XEGL.h"
-#include "XShader.h"
-#include "IVideoView.h"
-#include "GLVideoView.h"
-
-
-class TestObs : public IObserver
-{
-public:
-    virtual void Update(XData d){
-//        XLOGI("Test Obs Update data size is %d",d.size);
-    }
-};
-
-IVideoView * view = nullptr;
-
-
+#include "XLog.h"
+#include "IPlayerPorxy.h"
 extern "C"
 {
 
 
-JNIEXPORT jstring JNICALL
-Java_derek_xplay_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject  jobject1,jstring jurl) {
-    std::string hello = "Hello from C++";
-    const char* url = env->GetStringUTFChars(jurl,NULL);
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm,void *res)
+{
+    IPlayerPorxy::Get()->Init(vm);
+
+    /*IPlayerPorxy::Get()->Open("/sdcard/v1080.mp4");
+    IPlayerPorxy::Get()->Start();
 
 
-    ///////////////////////////////////////////
-    // 测试代码
-    IObserver* tobs = new TestObs();
+    IPlayerPorxy::Get()->Open("/sdcard/1080.mp4");
+    IPlayerPorxy::Get()->Start();*/
 
+    return JNI_VERSION_1_4;
+}
 
+JNIEXPORT void JNICALL
+Java_derek_xplay_XPlay_InitView(JNIEnv *env, jobject instance, jobject surface) {
 
-
-    IDemux * de = new FFDemux();
-    de->Open(url);
-
-    IDecode * vdecode = new FFDecode();
-    IDecode * adecode = new FFDecode();
-
-    vdecode->Open(de->GetVPara());
-    adecode->Open(de->GetAPara());
-
-    de->AddObs(vdecode);
-    de->AddObs(adecode);
-
-
-    vdecode->AddObs(view);
-
-    de->Start();
-    vdecode->Start();
-    adecode->Start();
-
-//    XSleep(3000);
-//    de->Stop();
-
-//    while(true)
-//    {
-//        XData d = de->Read();
-//
-//    }
-
-    env->ReleaseStringUTFChars(jurl,url);
-    return env->NewStringUTF(hello.c_str());
+    // TODO
+    ANativeWindow *win = ANativeWindow_fromSurface(env,surface);
+    IPlayerPorxy::Get()->InitView(win);
 }
 
 
 JNIEXPORT void JNICALL
-Java_derek_xplay_XPlay_InitView(JNIEnv *env, jobject thiz, jobject holder) {
+Java_derek_xplay_OpenUrl_Open(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = env->GetStringUTFChars(url_, 0);
 
-    ANativeWindow * nativeWindow = ANativeWindow_fromSurface(env,holder);
+    IPlayerPorxy::Get()->Open(url);
+    IPlayerPorxy::Get()->Start();
+    //IPlayerPorxy::Get()->Seek(0.5);
 
-    view = new GLVideoView();
-    view->SetRender(nativeWindow);
+    env->ReleaseStringUTFChars(url_, url);
+}
 
-    //XEGL::Get()->Init(nativeWindow);
+JNIEXPORT jdouble JNICALL
+Java_derek_xplay_MainActivity_PlayPos(JNIEnv *env, jobject instance) {
 
-    //XShader shader;
-    //shader.Init();
-
-
+    // TODO
+    return IPlayerPorxy::Get()->PlayPos();
 
 }
 
+JNIEXPORT void JNICALL
+Java_derek_xplay_MainActivity_Seek(JNIEnv *env, jobject instance, jdouble pos) {
+
+    IPlayerPorxy::Get()->Seek(pos);
+
+}
+
+JNIEXPORT void JNICALL
+Java_derek_xplay_XPlay_PlayOrPause(JNIEnv *env, jobject instance) {
+
+    IPlayerPorxy::Get()->SetPause(!IPlayerPorxy::Get()->IsPause());
+
+}
 
 }
